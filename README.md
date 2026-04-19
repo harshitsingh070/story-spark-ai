@@ -25,11 +25,10 @@
 - [Table of Contents](#table-of-contents)
 - [About 🚀](#about-)
 - [Features 💪](#features-)
-- [How to add your Project Data 🤔](#how-to-add-your-project-data-)
-  - [Prerequisites](#prerequisites)
-  - [How to Install Git](#how-to-install-git)
-  - [How to Install Node.js and npm](#how-to-install-nodejs-and-npm)
-  - [Steps to Add Your project Data](#steps-to-add-your-project-data)
+- [Prerequisites](#prerequisites)
+- [How to Install Git](#how-to-install-git)
+- [How to Install Node.js and npm](#how-to-install-nodejs-and-npm)
+- [Local development (monorepo)](#local-development-monorepo)
 - [Contributing 👨‍💻](#contributing-)
 - [Contributors 🤝](#contributors-)
 - [License](#license)
@@ -118,49 +117,54 @@ Node.js is a JavaScript runtime environment that allows you to run JavaScript co
 
 By following these steps, you have successfully installed Node.js and npm on your system. You are now ready to start building JavaScript applications and managing dependencies with npm.
 
-### Steps to Setup Project
+### Local development (monorepo)
 
-1. **Fork the repository:** To create a copy of the repository in your GitHub account, click on the "Fork" button in the top right corner of the project repository page.
-2. **Clone the forked repository:** To clone the repository to your local development environment, open the terminal or command prompt and run the following command:
+**Prerequisites:** Node.js **18.18+** (see `.nvmrc` for a suggested major version), npm **9+**, MongoDB URI for the API.
+
+1. **Clone the repository**
 
    ```bash
    git clone https://github.com/<your-github-username>/story-spark-ai.git
+   cd story-spark-ai
    ```
 
-3. **Install dependencies:** To install the necessary dependencies for the project, navigate to the project directory and run the following command:
+2. **Install dependencies** (single install at the repo root — npm workspaces)
 
    ```bash
    npm install
    ```
-4. **Create a new branch:** To create a new branch for your project, run the following command:
-    ```bash
-    git checkout -b add-project
-    ```
-5. **Add your changed files:** Add changed files to the stage by running the following command:
-    ```bash
-    git add .
-    ```
-6. **Commit your changes:** To save your changes to the branch,, run the following command:
-    ```bash
-    git commit -m "add: <your-name>"
-    ```
-7. **Push to the branch:** To push the changes to the remote repository, run the following command:
-    ```bash
-    git push origin add-project
-    ```
-8. **Create a pull request:** To submit your changes to the main repository, create a pull request by clicking on the "Compare & pull request" button on your forked repository page.
-9. **Wait for review and merge:** Wait for the project maintainers to review and merge your changes.
 
-Once your changes are merged, your project data will be added to the project's **`contributors.json`** file and your project will be displayed on the project's website.
+3. **Environment files**
 
-### Steps to env
+   - Copy `backend/.env.example` → `backend/.env` and fill all values your deployment needs (database, JWT secrets, AI keys, email, etc.).
+   - Copy `frontend/.env.example` → `frontend/.env` and set `VITE_BASE_URL` to your API base URL (e.g. `http://localhost:5000/api/v1` when the backend runs on port 5000). Optionally set `VITE_SOCKET_URL` for notifications.
 
+4. **Run apps**
 
-1. **Create env file:**  .env add 
+   - **Both** (two terminals or one combined process):
+
+     ```bash
+     npm run dev
+     ```
+
+   - **Backend only:** `npm run dev:backend` — API (default port **5000** if `PORT` is unset).
+   - **Frontend only:** `npm run dev:frontend` — Vite dev server on **http://localhost:4001**
+
+5. **Production builds**
 
    ```bash
-    VITE_BASE_URL=https://ai-stories-book-backend.vercel.app/api/v1
+   npm run build
+   npm run start:backend    # requires `npm run build:backend` first
+   npm run start:frontend   # serves built static app (preview)
    ```
+
+**Git:** Use a **single** repository root (one `.git` folder). Do not nest another `.git` inside `frontend/` or `backend/`.
+
+### Contributing workflow
+
+1. Fork the repository and clone your fork.
+2. Create a branch: `git checkout -b your-feature-branch`
+3. Install with `npm install` at the repo root, make changes, then `git add`, `git commit`, `git push`, and open a pull request.
 
 
 <a id="contributing"></a>

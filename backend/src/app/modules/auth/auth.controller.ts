@@ -1,0 +1,62 @@
+import { Request, Response } from "express";
+import httpStatus from "http-status";
+import { AuthModel } from "./auth.interface";
+import { AuthService } from "./auth.service";
+import config from "../../../config";
+import sendResponse from "../../../shared/send_response";
+import { IUser } from "../user/user.interface";
+import catchAsync from "../../../shared/catch_async";
+
+const login = catchAsync(async (req: Request, res: Response) => {
+  const body: AuthModel = req.body;
+  const result = await AuthService.login(body);
+  const { accessToken, refreshToken } = result;
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: config.env === "production",
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User login successfully!",
+    data: { accessToken },
+  });
+});
+
+const register = catchAsync(async (req: Request, res: Response) => {
+  const body: IUser = req.body;
+  const result = await AuthService.register(body);
+  const { accessToken, refreshToken } = result;
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: config.env === "production",
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User Register successfully!",
+    data: { accessToken },
+  });
+});
+
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const token = req.headers.authorization;
+  const result = await AuthService.refreshToken(token as string);
+  const { accessToken } = result;
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Got Access Token!",
+    data: { accessToken },
+  });
+});
+
+export const AuthController = {
+  login,
+  register,
+  refreshToken,
+};
