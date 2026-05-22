@@ -259,10 +259,6 @@ const ExploreComponent = () => {
 
                 <div className="flex items-center space-x-4">
 
-                  <label className="text-sm font-medium text-slate-400">
-                    Show
-                  </label>
-
                   <select
                     className="!rounded-button border border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-slate-800 text-slate-300 py-1.5 px-3 outline-none transition-all appearance-none cursor-pointer"
                     value={size}
@@ -276,10 +272,6 @@ const ExploreComponent = () => {
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                   </select>
-
-                  <span className="text-sm font-medium text-slate-400">
-                    entries
-                  </span>
 
                 </div>
               </div>
