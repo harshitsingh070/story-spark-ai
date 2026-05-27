@@ -35,6 +35,8 @@ const GithubcontributorsComponent : React.FC = () =>{
       
       }catch(error){
         console.error("Failed to load GitHub contributors", error);
+      } catch (err: unknown) {
+        console.error("Failed to load GitHub contributors", err);
       }
         
     };

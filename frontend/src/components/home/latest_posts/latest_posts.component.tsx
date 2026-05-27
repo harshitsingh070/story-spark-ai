@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useGetLatestListsQuery } from "../../../redux/apis/post.api";
 import { Post } from "../../../models/post";
-import LoadingAnimation from "../../loading/loading.component";
 import SSProfile from "../../ui-component/ss-profile/ss-profile";
 import { formatDateShort } from "../../../utils/time-formate";
 import { useNavigate } from "react-router-dom";
@@ -9,116 +8,143 @@ import BookmarkButton from "../../BookmarkButton";
 
 const POSTS_PER_PAGE = 6;
 
-/* -------------------- MOCK POSTS (2 existing + 4 new) -------------------- */
+const mockAuthor = (id: string, name: string) => ({
+  _id: id,
+  email: `${id}@example.com`,
+  name,
+  createdAt: new Date().toISOString(),
+});
+
+const mockTopic = (_id: string, title: string, color: string) => ({
+  _id,
+  title,
+  color,
+  selected: false,
+});
+
+const createMockPost = (
+  overrides: Pick<Post, "_id" | "title" | "content" | "imageURL" | "author" | "topic"> &
+    Partial<
+      Pick<
+        Post,
+        | "likesCount"
+        | "commentsCount"
+        | "viewsCount"
+        | "isFeaturedPost"
+        | "tag"
+        | "bookmarks"
+      >
+    >
+): Post => {
+  const now = new Date().toISOString();
+  return {
+    tag: "article",
+    likesCount: 0,
+    commentsCount: 0,
+    viewsCount: 0,
+    isPublished: true,
+    isFeaturedPost: false,
+    publishedAt: now,
+    updatedBy: overrides.author.email,
+    attachments: [],
+    comments: [],
+    reactions: [],
+    bookmarks: [],
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+};
+
+/* -------------------- MOCK POSTS (fallback when API is empty) -------------------- */
 const mockPosts: Post[] = [
-  {
+  createMockPost({
     _id: "1",
     title: "Understanding React Performance Optimization",
     content:
       "React performance can be improved using memoization, lazy loading, and proper state management techniques...",
-    createdAt: new Date().toISOString(),
+    imageURL: "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
+    author: mockAuthor("a1", "John Doe"),
+    topic: [
+      mockTopic("t1", "React", "bg-blue-100 text-blue-700"),
+      mockTopic("t2", "Frontend", "bg-purple-100 text-purple-700"),
+    ],
     likesCount: 120,
     commentsCount: 34,
-    views: 1023,
-    isTrending: true,
-    coverImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
-    author: { name: "John Doe" },
-    bookmarks: [],
-    topic: [
-      { _id: "t1", title: "React", color: "bg-blue-100 text-blue-700" },
-      { _id: "t2", title: "Frontend", color: "bg-purple-100 text-purple-700" },
-    ],
-  },
-  {
+    viewsCount: 1023,
+    isFeaturedPost: true,
+  }),
+  createMockPost({
     _id: "2",
     title: "Mastering Tailwind CSS for Modern UI",
     content:
       "Tailwind CSS allows you to build modern interfaces quickly using utility-first classes...",
-    createdAt: new Date().toISOString(),
+    imageURL: "https://images.unsplash.com/photo-1523437113738-bbd3cc89fb19",
+    author: mockAuthor("a2", "Jane Smith"),
+    topic: [
+      mockTopic("t2", "Frontend", "bg-purple-100 text-purple-700"),
+      mockTopic("t3", "CSS", "bg-pink-100 text-pink-700"),
+    ],
     likesCount: 89,
     commentsCount: 18,
-    views: 780,
-    isTrending: false,
-    coverImage: "https://images.unsplash.com/photo-1523437113738-bbd3cc89fb19",
-    author: { name: "Jane Smith" },
-    bookmarks: [],
-    topic: [
-      { _id: "t2", title: "Frontend", color: "bg-purple-100 text-purple-700" },
-      { _id: "t3", title: "CSS", color: "bg-pink-100 text-pink-700" },
-    ],
-  },
-  {
+    viewsCount: 780,
+  }),
+  createMockPost({
     _id: "3",
     title: "Node.js Scaling Strategies for Production Apps",
     content:
       "Scaling Node.js requires clustering, load balancing, caching, and proper database optimization...",
-    createdAt: new Date().toISOString(),
+    imageURL: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31",
+    author: mockAuthor("a3", "Alex Johnson"),
+    topic: [mockTopic("t4", "Backend", "bg-green-100 text-green-700")],
     likesCount: 210,
     commentsCount: 56,
-    views: 2400,
-    isTrending: true,
-    coverImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31",
-    author: { name: "Alex Johnson" },
-    bookmarks: [],
-    topic: [
-      { _id: "t4", title: "Backend", color: "bg-green-100 text-green-700" },
-    ],
-  },
-  {
+    viewsCount: 2400,
+    isFeaturedPost: true,
+  }),
+  createMockPost({
     _id: "4",
     title: "UI/UX Principles Every Developer Should Know",
     content:
       "Good UI/UX is about simplicity, clarity, and consistency across the application...",
-    createdAt: new Date().toISOString(),
+    imageURL: "https://images.unsplash.com/photo-1559028012-481c04fa702d",
+    author: mockAuthor("a4", "Emily Clark"),
+    topic: [mockTopic("t5", "Design", "bg-yellow-100 text-yellow-700")],
     likesCount: 67,
     commentsCount: 12,
-    views: 540,
-    isTrending: false,
-    coverImage: "https://images.unsplash.com/photo-1559028012-481c04fa702d",
-    author: { name: "Emily Clark" },
-    bookmarks: [],
-    topic: [
-      { _id: "t5", title: "Design", color: "bg-yellow-100 text-yellow-700" },
-    ],
-  },
-  {
+    viewsCount: 540,
+  }),
+  createMockPost({
     _id: "5",
     title: "JavaScript ES2026 Features You Should Know",
     content:
       "New JS features include better async handling, pattern matching, and improved decorators...",
-    createdAt: new Date().toISOString(),
+    imageURL: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+    author: mockAuthor("a5", "Michael Lee"),
+    topic: [mockTopic("t1", "React", "bg-blue-100 text-blue-700")],
     likesCount: 145,
     commentsCount: 29,
-    views: 1800,
-    isTrending: true,
-    coverImage: "https://images.unsplash.com/photo-1518770660439-4636190af475",
-    author: { name: "Michael Lee" },
-    bookmarks: [],
-    topic: [{ _id: "t1", title: "React", color: "bg-blue-100 text-blue-700" }],
-  },
-  {
+    viewsCount: 1800,
+    isFeaturedPost: true,
+  }),
+  createMockPost({
     _id: "6",
     title: "How to Build Scalable APIs in 2026",
     content:
       "Scalable APIs require good architecture, caching layers, rate limiting, and database indexing...",
-    createdAt: new Date().toISOString(),
+    imageURL: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb",
+    author: mockAuthor("a6", "Sophia Brown"),
+    topic: [mockTopic("t4", "Backend", "bg-green-100 text-green-700")],
     likesCount: 98,
     commentsCount: 20,
-    views: 900,
-    isTrending: false,
-    coverImage: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb",
-    author: { name: "Sophia Brown" },
-    bookmarks: [],
-    topic: [
-      { _id: "t4", title: "Backend", color: "bg-green-100 text-green-700" },
-    ],
-  },
+    viewsCount: 900,
+  }),
 ];
 
 /* ------------------------------------------------------------------------ */
 
 const LatestPostsComponent = () => {
-  const { data, isLoading } = useGetLatestListsQuery(undefined);
+  const { data, isLoading, isError } = useGetLatestListsQuery(undefined);
   const navigate = useNavigate();
 
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
@@ -220,7 +246,7 @@ const LatestPostsComponent = () => {
             {/* Image */}
             <div className="h-44 bg-slate-200 overflow-hidden">
               <img
-                src={post.coverImage}
+                src={post.imageURL}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -264,9 +290,9 @@ const LatestPostsComponent = () => {
               <div className="flex justify-between text-xs mt-4 text-slate-500">
                 <span>❤️ {post.likesCount}</span>
                 <span>💬 {post.commentsCount}</span>
-                <span>👁 {post.views}</span>
+                <span>👁 {post.viewsCount}</span>
 
-                {post.isTrending && (
+                {post.isFeaturedPost && (
                   <span className="text-orange-500 font-semibold">
                     🔥 Trending
                   </span>

@@ -51,6 +51,18 @@ const throwIfAborted = (signal?: AbortSignal): void => {
   }
 };
 
+const sanitizeJsonText = (rawText: string): string => {
+  const trimmed = rawText.trim();
+  if (!trimmed.startsWith("```")) {
+    return trimmed;
+  }
+
+  return trimmed
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+};
+
 export async function generateWithGeminiStories(
   prompt: string,
   wordLength: number = 250,
@@ -91,32 +103,50 @@ export async function generateWithGeminiStories(
         The stories MUST be written entirely in the ${language} language.
         Each story should be in JSON format with fields: "title", "content", and "tag".
         Ensure each story is approximately ${wordLength} words long.
- main
+        Return only valid JSON array output.`
     );
 
     throwIfAborted(signal);
 
     const text = response.response.text();
- main
+    const parsed = JSON.parse(sanitizeJsonText(text));
+    const stories = Array.isArray(parsed) ? parsed : parsed?.stories;
+
+    if (!Array.isArray(stories) || stories.length === 0) {
+      throw new ApiError(
+        httpStatus.BAD_GATEWAY,
+        "Invalid AI response: Expected a non-empty story array."
+      );
+    }
+
+    const imageResults = await Promise.all(
+      stories.map((story) => fetchImageURL(String(story?.tag ?? "")))
+    );
+
     return stories.map((story, index) => ({
       ...story,
       language,
       imageURL: imageResults[index].imageUrl,
       uuid: uuidv4(),
     }));
- main
+  } catch (error: unknown) {
+    if (error instanceof ApiError || error instanceof GenerationAbortedError) {
+      throw error;
+    }
+
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    throw new ApiError(
+      httpStatus.BAD_GATEWAY,
+      `AI story generation failed: ${errorMsg}`
+    );
   }
 }
 
 export async function generateAlternateEndingsWithGemini(
   title: string,
   content: string,
-
   tag: string,
   language: string = "English"
-
- 
-
 ): Promise<IAlternateEnding[]> {
   if (!config.gemini_api_key) {
     return [
@@ -155,11 +185,7 @@ export async function generateAlternateEndingsWithGemini(
       history: [],
     });
     const response = await chatSession.sendMessage(
-
       `You are a professional narrative editor. Analyze the following story (Title: "${title}", Genre/Tag: "${tag}", Language: "${language}"):
-
-      
-      
       Story Content:
       "${content}"
       
@@ -182,7 +208,7 @@ export async function generateAlternateEndingsWithGemini(
     
     let parsed: any;
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(sanitizeJsonText(text));
     } catch (parseError: unknown) {
       const parseErrorMsg = parseError instanceof Error ? parseError.message : String(parseError);
       throw new ApiError(
