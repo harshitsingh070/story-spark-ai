@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import BookmarkButton from "../../BookmarkButton";
 
 const LatestPostsComponent = () => {
-  const { data, isLoading } = useGetLatestListsQuery(undefined);
+  const { data, isLoading, isError } = useGetLatestListsQuery(undefined);
   const navigate = useNavigate();
 
   const calculateReadingTime = (content: string): number => {
@@ -20,6 +20,18 @@ const LatestPostsComponent = () => {
 
   if (isLoading) {
     return <LoadingAnimation />;
+  }
+
+  if (isError) {
+    return (
+      <div className="w-full rounded-3xl border border-slate-200 bg-white/70 p-7 text-slate-900 shadow-md backdrop-blur-xl dark:border-slate-700/40 dark:bg-slate-900/60 dark:text-slate-100">
+        <h2 className="text-xl font-bold">Latest Posts</h2>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          We couldn&apos;t load the latest posts right now. Please refresh and try
+          again.
+        </p>
+      </div>
+    );
   }
 
   return (
