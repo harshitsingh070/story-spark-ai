@@ -6,7 +6,7 @@ import config from "../../config";
 import { Secret } from "jsonwebtoken";
 import { ITokenPayload } from "../../interfaces/token";
 
-export const getToken = async (req: Request): Promise<ITokenPayload> => {
+export const getToken = (req: Request): ITokenPayload => {
   const token = req.headers.authorization as string;
   if (!token) {
     throw new ApiError(
@@ -15,11 +15,12 @@ export const getToken = async (req: Request): Promise<ITokenPayload> => {
     );
   }
   try {
-    const verifiedUser = await JwtHalers.verifyToken(
+    const verifiedUser = JwtHalers.verifyToken(
       token,
       config.jwt.secret as Secret
     );
     const user = {
+      _id: verifiedUser._id,
       email: verifiedUser.email,
       role: verifiedUser.role,
       subscriptionType: verifiedUser.subscriptionType,

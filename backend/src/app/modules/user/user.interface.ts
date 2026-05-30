@@ -9,8 +9,8 @@ export interface IUser {
   status: string;
   subscriptionType: SubscriptionType;
   postsCount: number;
-  followers: string;
-  following: string;
+  followers: Types.ObjectId[];
+  following: Types.ObjectId[];
   profile: {
     avatar: string;
     bio: string;
@@ -25,6 +25,18 @@ export interface IUser {
   lastRequestDate: Date;
   posts: Types.ObjectId[];
   isApplyForWriter: boolean;
+  gamification: {
+    xp: number;
+    level: number;
+    streak: number;
+    lastActiveDate: Date | null;
+    badges: string[];
+  };
+  readingPreferences?: {
+    favoriteGenres: { name: string; count: number }[];
+    favoriteEmotions: { name: string; count: number }[];
+  };
+  readingHistory?: Types.ObjectId[];
 }
 
 export type UserModel = Model<IUser, object>;

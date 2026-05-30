@@ -4,6 +4,11 @@ import baseApi from "../base_api/base.api";
 import { POST_URL } from "../base_api/base.endpoints";
 import { tagTypes } from "../tag-types";
 
+interface QueryErrorResponse {
+  status?: number;
+  data?: unknown;
+}
+
 const postApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     createPost: build.mutation({
@@ -14,12 +19,24 @@ const postApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.post, tagTypes.user],
     }),
+
+    updatePost: build.mutation({
+      query: (arg: { id: string; data: Record<string, unknown> }) => ({
+        url: `/${POST_URL}/${arg.id}`,
+        method: "PATCH",
+        data: arg.data,
+      }),
+      invalidatesTags: [tagTypes.post],
+    }),
+
+
     getPostLists: build.query({
       query: (arg: Record<string, string | number>) => ({
         url: `/${POST_URL}/lists`,
         method: "GET",
         params: arg,
       }),
+
       transformResponse: (response: {
         data: Post[];
         meta: IMeta;
@@ -31,13 +48,23 @@ const postApi = baseApi.injectEndpoints({
           message: response.message,
         };
       },
+
+      transformErrorResponse: (response: QueryErrorResponse) => {
+        return {
+          status: response?.status,
+          message: "Unable to fetch posts. Please try again later.",
+        };
+      },
+
       providesTags: [tagTypes.post],
     }),
+
     getLatestLists: build.query({
       query: () => ({
         url: `/${POST_URL}/latest-lists`,
         method: "GET",
       }),
+
       transformResponse: (response: {
         data: Post[];
         meta: IMeta;
@@ -49,13 +76,23 @@ const postApi = baseApi.injectEndpoints({
           message: response.message,
         };
       },
+
+      transformErrorResponse: (response: QueryErrorResponse) => {
+        return {
+          status: response?.status,
+          message: "Unable to fetch latest posts. Please try again later.",
+        };
+      },
+
       providesTags: [tagTypes.post],
     }),
+
     getFeaturedLists: build.query({
       query: () => ({
         url: `/${POST_URL}/feature-lists`,
         method: "GET",
       }),
+
       transformResponse: (response: {
         data: Post[];
         meta: IMeta;
@@ -67,36 +104,81 @@ const postApi = baseApi.injectEndpoints({
           message: response.message,
         };
       },
+
+      transformErrorResponse: (response: QueryErrorResponse) => {
+        return {
+          status: response?.status,
+          message: "Unable to fetch featured posts. Please try again later.",
+        };
+      },
+
       providesTags: [tagTypes.post],
     }),
+
     getPostById: build.query({
       query: (id: string) => ({
         url: `/${POST_URL}/${id}`,
         method: "GET",
       }),
+
       transformResponse: (response: { data: Post; message: string }) => {
         return response.data;
       },
+
+      transformErrorResponse: (response: QueryErrorResponse) => {
+        return {
+          status: response?.status,
+          message: "Unable to fetch post details.",
+        };
+      },
+
       providesTags: [tagTypes.post],
     }),
+
     getPostByTag: build.query({
-      query: (tag: string) => ({
-        url: `/${POST_URL}/tag/${tag}`,
+      // Accepts an object with tag and excludeId
+      query: (arg: { tag: string; excludeId?: string }) => ({
+        url: `/${POST_URL}/tag/${arg.tag}`,
         method: "GET",
+        params: arg.excludeId ? { excludeId: arg.excludeId } : {},
       }),
+
       transformResponse: (response: { data: Post[]; message: string }) => {
         return response.data;
       },
+
+      transformErrorResponse: (response: QueryErrorResponse) => {
+        return {
+          status: response?.status,
+          message: "Unable to fetch posts by tag.",
+        };
+      },
+
       providesTags: [tagTypes.post],
+    }),
+
+    deletePost: build.mutation({
+      query: (id: string) => ({
+        url: `/${POST_URL}/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        tagTypes.post,
+        tagTypes.user,
+        tagTypes.comment,
+        tagTypes.bookmark,
+      ],
     }),
   }),
 });
 
 export const {
   useCreatePostMutation,
+  useUpdatePostMutation,
   useGetPostListsQuery,
   useGetLatestListsQuery,
   useGetFeaturedListsQuery,
   useGetPostByIdQuery,
   useGetPostByTagQuery,
+  useDeletePostMutation,
 } = postApi;

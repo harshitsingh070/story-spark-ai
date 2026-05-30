@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useGetPostListsQuery } from "../../../redux/apis/post.api";
 import { useDebounced } from "../../../hooks/global";
-import { Post, Topic } from "../../../models/post";
+import { Topic } from "../../../models/post";
 import PaginationComponent from "../../pagination/pagination.component";
 
 interface FilterStats {
@@ -31,55 +31,7 @@ const PostListsComponent: React.FC = () => {
     query["searchTerm"] = debounceTerm;
   }
 
-  // const { data, isLoading } = useGetPostListsQuery({ ...query });
-  const isLoading = false;
-  const data = {
-    meta: { total: 3 },
-    posts: [
-      {
-        _id: "1",
-        title: "Understanding React Hooks Deep Dive",
-        tag: "React",
-        author: { name: "Lisa Wang", email: "lisa@example.com" },
-        topic: [{ _id: "t1", title: "Technology", color: "#3b82f6" }, { _id: "t3", title: "Web", color: "#10b981" }],
-        isPublished: true,
-        isFeaturedPost: true,
-        likesCount: 1205,
-        commentsCount: 342,
-        viewsCount: 15400,
-        createdAt: "2023-10-01T12:00:00Z",
-        imageURL: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=200&h=200&fit=crop"
-      },
-      {
-        _id: "2",
-        title: "Mastering Tailwind CSS for Dark Themes",
-        tag: "CSS",
-        author: { name: "Aditya Gautam", email: "aditya@example.com" },
-        topic: [{ _id: "t2", title: "Design", color: "#ec4899" }],
-        isPublished: false,
-        isFeaturedPost: false,
-        likesCount: 89,
-        commentsCount: 12,
-        viewsCount: 1205,
-        createdAt: "2023-10-02T12:00:00Z",
-        imageURL: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=200&h=200&fit=crop"
-      },
-      {
-        _id: "3",
-        title: "Building Scalable AI Applications",
-        tag: "AI/ML",
-        author: { name: "John Smith", email: "john@example.com" },
-        topic: [{ _id: "t4", title: "AI", color: "#8b5cf6" }, { _id: "t1", title: "Technology", color: "#3b82f6" }],
-        isPublished: true,
-        isFeaturedPost: false,
-        likesCount: 890,
-        commentsCount: 156,
-        viewsCount: 9800,
-        createdAt: "2023-10-05T09:30:00Z",
-        imageURL: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=200&h=200&fit=crop"
-      }
-    ]
-  };
+  const { data, isLoading } = useGetPostListsQuery({ ...query });
 
   // Calculate filter stats
   const filterStats: FilterStats = useMemo(() => {
@@ -118,8 +70,9 @@ const PostListsComponent: React.FC = () => {
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  setSearchTerm(e.target.value);
+  setPage(1);
+};
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -154,9 +107,9 @@ const PostListsComponent: React.FC = () => {
     return topics.map((topic) => (
       <span
         key={topic._id}
-        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm transition-all duration-200 hover:scale-105 cursor-default"
-        style={{ 
-          backgroundColor: `${topic.color}15`, 
+        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shadow-sm border"
+        style={{
+          backgroundColor: `${topic.color}15`,
           color: topic.color,
           borderColor: `${topic.color}35`,
           boxShadow: `0 0 12px ${topic.color}20`
@@ -179,11 +132,10 @@ const PostListsComponent: React.FC = () => {
 
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-300 ${
-          isPublished
-            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)]"
-            : "bg-amber-500/15 text-amber-300 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.35)]"
-        }`}
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${isPublished
+            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+            : "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]"
+          }`}
       >
         <span className={`w-2 h-2 rounded-full ${isPublished ? "bg-emerald-400" : "bg-amber-400"}`}></span>
         {isPublished ? "Published" : "Draft"}
@@ -284,57 +236,144 @@ const PostListsComponent: React.FC = () => {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="px-6 py-8 lg:px-8">
-        {isLoading ? (
-          <div className="flex justify-center items-center p-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-12">
-            <i className="fas fa-inbox text-4xl text-gray-600 mb-4 block"></i>
-            <p className="text-gray-400">No posts found</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredPosts.map((post: Post) => (
-              <div 
-                key={post._id}
-                className="bg-[#141624]/60 border border-gray-800/60 rounded-xl p-4 lg:p-6 transition-all duration-300 hover:border-gray-700/80 hover:bg-[#0f1119]/80 group"
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-800/60">
+          <thead className="bg-[#141624]/80 backdrop-blur-sm">
+            <tr>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
               >
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                  {/* Post Image & Title */}
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    {post.imageURL && (
-                      <div className="flex-shrink-0 h-16 w-16 relative overflow-hidden rounded-xl shadow-md ring-1 ring-white/10 group-hover:ring-blue-500/30 transition-all duration-300">
-                        <img
-                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          src={post.imageURL}
-                          alt={post.title}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base lg:text-lg font-semibold text-gray-200 group-hover:text-blue-300 transition-colors duration-200 truncate">
-                        {post.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-2">
-                        <i className="fas fa-tag"></i>
-                        {post.tag}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {getTopicBadges(post.topic).slice(0, 2)}
-                        {post.topic.length > 2 && (
-                          <span className="text-xs text-gray-500">+{post.topic.length - 2} more</span>
-                        )}
+                Title
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                Author
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                Topics
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                Stats
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                Created
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800/60 bg-transparent">
+            {isLoading ? (
+              [...Array(5)].map((_, idx) => (
+                <tr key={idx} className="animate-pulse bg-transparent border-b border-gray-800/40">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-11 w-11 mr-4 rounded-lg bg-gray-800/40" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="h-4 bg-gray-800/60 rounded-md w-32" />
+                        <div className="h-3 bg-gray-800/30 rounded-md w-16" />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Author Avatar */}
-                  <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getInitialsBgColor(post.author.email)} flex items-center justify-center text-white text-xs font-bold shadow-md`}>
-                      {getAuthorInitials(post.author.name)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="space-y-1.5">
+                      <div className="h-4 bg-gray-800/50 rounded-md w-24" />
+                      <div className="h-3 bg-gray-800/30 rounded-md w-32" />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-1.5">
+                      <div className="h-5 bg-gray-800/40 rounded-full w-14" />
+                      <div className="h-5 bg-gray-800/40 rounded-full w-16" />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-5 bg-gray-800/50 rounded-full w-16" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex space-x-5">
+                      <div className="text-center">
+                        <div className="h-4 bg-gray-800/40 rounded-md w-6 mx-auto" />
+                        <div className="h-2 bg-gray-800/20 rounded-md w-8 mt-1" />
+                      </div>
+                      <div className="text-center">
+                        <div className="h-4 bg-gray-800/40 rounded-md w-6 mx-auto" />
+                        <div className="h-2 bg-gray-800/20 rounded-md w-8 mt-1" />
+                      </div>
+                      <div className="text-center">
+                        <div className="h-4 bg-gray-800/40 rounded-md w-6 mx-auto" />
+                        <div className="h-2 bg-gray-800/20 rounded-md w-8 mt-1" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="h-4 bg-gray-800/40 rounded-md w-20" />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="h-8 bg-gray-800/40 rounded-md w-12" />
+                      <div className="h-8 bg-gray-800/40 rounded-md w-14" />
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              data?.posts?.map((post) => (
+                <tr key={post._id} className="hover:bg-gray-800/30 transition-colors duration-200 group">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      {post.imageURL && (
+                        <div className="flex-shrink-0 h-11 w-11 mr-4 relative">
+                          <img
+                            className="h-11 w-11 rounded-lg object-cover shadow-md ring-1 ring-white/10"
+                            src={post.imageURL}
+                            alt={post.title}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm font-semibold text-gray-200 group-hover:text-blue-400 transition-colors duration-200">
+                          {post.title}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px] xl:max-w-xs">
+                          {post.tag}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-200">
+                      {post.author?.name || 'Unknown User'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {post.author?.email || 'N/A'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                      {getTopicBadges(post.topic)}
                     </div>
                     <div className="text-sm">
                       <p className="font-medium text-gray-300">{post.author.name}</p>
@@ -372,7 +411,13 @@ const PostListsComponent: React.FC = () => {
                         <span className="text-sm font-semibold">{post.viewsCount}</span>
                       </div>
                     </div>
-                  </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-gray-800/40">
