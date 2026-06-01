@@ -101,7 +101,6 @@ const router = createBrowserRouter([
       { path: "forgot-password", element: <ForgotPasswordComponent /> },
       { path: "pricing", element: <PricingComponent /> },
       { path: "post/:id", element: <PostDetailsComponent /> },
-      { path: "help", element: <HelpCenterComponent /> },
       { path: "contact-us", element: <Contact /> },
       { path: "about-us", element: <AboutUsComponent /> },
       { path: "career", element: <CareerComponent /> },
