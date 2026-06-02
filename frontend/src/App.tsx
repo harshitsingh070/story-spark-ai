@@ -109,6 +109,7 @@ const ProtectedRoute = ({ allowedRoles, element }: ProtectedRouteProps) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
@@ -116,7 +117,13 @@ const ProtectedRoute = ({ allowedRoles, element }: ProtectedRouteProps) => {
   return element ? element : <Outlet />;
 };
 
-const ALL_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER, USER_ROLE.USER];
+const ALL_ROLES = [
+  USER_ROLE.ADMIN,
+  USER_ROLE.SUPER_ADMIN,
+  USER_ROLE.WRITER,
+  USER_ROLE.USER,
+];
+
 const ELEVATED_ADMIN_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN];
 
 const router = createBrowserRouter([
@@ -135,7 +142,15 @@ const router = createBrowserRouter([
       </div>
     ),
     children: [
-      { index: true, element: <><HeroSectionComponent /><HomeComponent /></> },
+      {
+        index: true,
+        element: (
+          <>
+            <HeroSectionComponent />
+            <HomeComponent />
+          </>
+        ),
+      },
       { path: "templates", element: <TemplatesComponent /> },
       { path: "writing-assistant", element: <WritingAssistantComponent /> },
       { path: "story-inspiration", element: <StoryInspirationWrapper /> },
@@ -266,7 +281,15 @@ const router = createBrowserRouter([
             children: [{ path: "analytics", element: <AnalyticsPage /> }],
           },
           {
-            element: <ProtectedRoute allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER]} />,
+            element: (
+              <ProtectedRoute
+                allowedRoles={[
+                  USER_ROLE.ADMIN,
+                  USER_ROLE.SUPER_ADMIN,
+                  USER_ROLE.WRITER,
+                ]}
+              />
+            ),
             children: [{ path: "post-lists", element: <PostListsComponent /> }],
           },
         ],
