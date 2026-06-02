@@ -249,4 +249,3 @@ const FeatureProfileComponent = () => {
 };
 
 export default FeatureProfileComponent;
-
