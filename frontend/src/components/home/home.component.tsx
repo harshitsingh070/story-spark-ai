@@ -9,6 +9,7 @@ import ResourceComponent from "./resources/resources.component";
 import PricingComponent from "./pricing/pricing.component";
 import WriterFeedbackComponent from "./writer_feedback/writer_feedback.component";
 import StartWritingComponent from "./start_writing/start_writing.component";
+import Contactus from "../contactus/contactus";
 import PersonalizedRecommendationsComponent from "./personalized_recommendations/personalized_recommendations.component";
 import { isLoggedIn } from "../../services/auth.service";
 import BackToTop from "../back_home/back_to_top.component";
@@ -39,11 +40,13 @@ const HomeComponent = () => {
         </aside>
 
       </div>
-      <CommunitySpotlightComponent /> 
+
+      <CommunitySpotlightComponent />
       <ResourceComponent />
       <WriterFeedbackComponent />
       <PricingComponent />
       <StartWritingComponent />
+      <Contactus />
       <BackToTop />
     </div>
   );
