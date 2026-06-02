@@ -26,13 +26,6 @@ const getuniqueStories = (stories: IStories[]): IStories[] => {
   });
 };
 
-type StoryItem = {
-  uuid: string;
-  title: string;
-  content: string;
-  tag: string;
-  imageURL: string;
-};
 
 /* ─── Inline styles ─── */
 const s: Record<string, React.CSSProperties> = {
@@ -236,8 +229,8 @@ const storiesPerPage = 10;
   );
   
   const [loading, setLoading] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [searchFilter, setSearchFilter] = useState<string>("all");
+  const [searchQuery] = useState("");
+  const [searchFilter] = useState("all");
 
   const uniqueStories = useMemo(() => getuniqueStories(stories), [stories]);
 
@@ -291,11 +284,11 @@ useEffect(() => {
     ? (GENRES.find((g) => g.name === draft.genre || g.value === draft.genre)?.value ?? "ðŸ§™ Fantasy")
     : "ðŸ§™ Fantasy",
 );
-  const [selectedLength, setSelectedLength] = useState<string>(draft?.length || "medium");
+  const [selectedLength] = useState<string>(draft?.length || "medium");
   const [textareaValue, setTextareaValue] = useState<string>(
     location.state?.prompt || draft?.prompt || ""
   );
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+  const [selectedLanguage ] = useState<string>(
     draft?.language || "English"
   );
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -335,7 +328,7 @@ let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   // Autosave draft
   // ensure selectedTone state exists (previously an invalid anonymous useState)
-  const [selectedTone, setSelectedTone] = useState<string>(draft?.tone || "");
+  const [selectedTone] = useState<string>(draft?.tone || "");
   useEffect(() => {
     const timer = setTimeout(() => {
       // stories intentionally excluded â€” API response, not user input
