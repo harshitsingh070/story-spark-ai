@@ -105,7 +105,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     title: "Account & Billing",
     description: "Manage your profile settings, subscriptions, and security options.",
     icon: "fa-solid fa-user-gear",
-    sectionId: "account-billing-section", 
+    sectionId: "account-billing-section",
     keywords: ["profile", "password", "billing", "subscription", "plan"]
   },
   {
@@ -117,6 +117,13 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     keywords: ["editor", "generation", "prompt", "history", "chapters"]
   }
 ];
+
+// CORRECTED MAPPING: Changed 'title' to 'label' so the sidebar reads it correctly
+export const HELP_SECTIONS = HELP_CATEGORIES.map(category => ({
+  id: category.sectionId,
+  label: category.title,
+  icon: category.icon
+}));
 
 export const TROUBLESHOOT_ITEMS: TroubleshootItem[] = [
   {

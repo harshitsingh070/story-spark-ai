@@ -1,11 +1,33 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { motion } from "framer-motion";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(useGSAP);
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } 
+  },
+};
+
 const features = [
+// ... (rest of the features array remains the same)
   {
     title: "Infinite Variations",
     description: "Generate multiple unique branches of your story from a single starting prompt. Explore every creative possibility.",
@@ -280,7 +302,7 @@ const HeroSectionComponent = () => {
             <span className="hero-gradient-text pb-2 block sm:inline">
               AI-Driven Storytelling
             </span>
-          </h1>
+          </motion.h1>
 
           <p className="max-w-2xl mx-auto text-sm sm:text-lg lg:text-xl text-slate-600 dark:text-slate-400 leading-relaxed mb-8 sm:mb-10 font-medium">
             Create, edit, and generate engaging multiple story variations from a single prompt.
@@ -304,7 +326,7 @@ const HeroSectionComponent = () => {
                 </Link>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
@@ -325,9 +347,9 @@ const HeroSectionComponent = () => {
           {features.map((feature, index) => (
             <FeatureCard feature={feature} key={index} />
           ))}
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

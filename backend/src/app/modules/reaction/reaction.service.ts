@@ -31,7 +31,7 @@ const toggleReaction = async (
   const existingReaction = await Reaction.findOne({
     postId: new Types.ObjectId(postId),
     userId: user._id,
-    type,
+    type: type,
   });
 
   if (existingReaction) {
@@ -69,23 +69,6 @@ const toggleReaction = async (
       likesCount: updatedPost?.likesCount || 0 
     };
   }
-
-  await Reaction.create({
-    postId: new Types.ObjectId(postId),
-    userId: user._id,
-    type,
-  });
-
-  const updatedPost = await Post.findOneAndUpdate(
-    { _id: postId },
-    { $inc: { likesCount: 1 } },
-    { new: true }
-  );
-
-  return {
-    message: "Reaction added successfully",
-    likesCount: updatedPost?.likesCount || 0,
-  };
 };
 
 export const ReactionService = {

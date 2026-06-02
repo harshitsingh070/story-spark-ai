@@ -28,7 +28,26 @@ const RecentPromptsPanel: React.FC<RecentPromptsPanelProps> = ({
   text,
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredPrompts = recentPrompts.filter((item) =>
+  item.prompt.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
+  const exportPrompts = () => {
+  const blob = new Blob(
+    [JSON.stringify(recentPrompts, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "recent-prompts.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
   return (
     <div className="relative">
       <button
@@ -89,10 +108,21 @@ const RecentPromptsPanel: React.FC<RecentPromptsPanelProps> = ({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 w-full box-border">
-            {recentPrompts.length > 0 ? (
-              recentPrompts.map((item) => (
-                <div key={item.id} className="w-full box-border flex flex-col gap-2 p-3.5 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/60 dark:border-white/5 rounded-xl transition-all hover:border-blue-500/30 group">
+          <div className="p-4 border-b border-slate-700/50">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search prompts..."
+              className="w-full px-3 py-2 bg-slate-700 text-white rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 text-sm"
+            />
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {filteredPrompts.length > 0 ? (
+              filteredPrompts.map((item) => (
+                <div key={item.id} className="group">
                   <button
                     type="button"
                     onClick={() => {
@@ -101,10 +131,13 @@ const RecentPromptsPanel: React.FC<RecentPromptsPanelProps> = ({
                     }}
                     className="w-full text-left p-0 bg-transparent text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-medium leading-relaxed break-words border-none outline-none cursor-pointer"
                   >
-                    "{item.prompt}"
+                    {item.prompt}
+                    
                   </button>
-                  
-                  <div className="flex gap-2 pt-2 border-t border-slate-200/40 dark:border-white/5 select-none w-full box-border">
+                  <p className="text-xs text-gray-400 mt-2">
+                      {new Date(item.timestamp).toLocaleString()}
+                  </p>
+                  <div className="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
                       type="button"
                       onClick={() => {
@@ -162,17 +195,25 @@ const RecentPromptsPanel: React.FC<RecentPromptsPanelProps> = ({
                 </div>
               ))
             ) : (
-              <div className="h-full flex flex-col items-center justify-center max-w-xs mx-auto select-none">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-4 border border-slate-200/60 dark:border-transparent">
-                  <i className="fa-solid fa-clock-rotate-left text-slate-400 dark:text-slate-500 text-base" />
-                </div>
-                <p className="text-center text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wider leading-normal m-0">{text.noRecentPrompts}</p>
+              <div className="h-full flex items-center justify-center">
+                <p className="text-center text-gray-500 text-sm">
+                  {searchTerm
+                    ? "No prompts match your search."
+                    : text.noRecentPrompts}
+                </p>
               </div>
             )}
           </div>
 
           {recentPrompts.length > 0 && (
             <div className="p-4 border-t border-slate-100 dark:border-white/5 select-none w-full box-border">
+              <button
+                type="button"
+                onClick={exportPrompts}
+                className="w-full mb-2 px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs rounded transition-colors duration-150 font-medium"
+              >
+                Export Prompts
+              </button>
               <button
                 type="button"
                 onClick={() => {
