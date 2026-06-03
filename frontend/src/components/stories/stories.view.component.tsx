@@ -1322,7 +1322,7 @@ const [, setShowRemix] = useState<boolean>(false);
     a.href = url;
     a.download = filename;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const getSafeFileName = (title: string, ext: string) => {
@@ -1409,18 +1409,31 @@ const [, setShowRemix] = useState<boolean>(false);
     }
   };
 
+  const escapeXml = (unsafe: string) => {
+    return unsafe.replace(/[<>&'"]/g, (c) => {
+      switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '\'': return '&apos;';
+        case '"': return '&quot;';
+        default: return c;
+      }
+    });
+  };
+
   const handleExportEPUB = async () => {
     if (!selectedStory) { toast.error("No story available to export."); return; }
     if (!selectedStory.content?.trim()) { toast.error("Story content is empty. Cannot export."); return; }
     const toastId = toast.loading("Generating your EPUB...");
     try {
       const zip = new JSZip();
-      const title = selectedStory.title || "Story";
+      const title = escapeXml(selectedStory.title || "Story");
       const content = selectedStory.content || "";
-      const author = isLogin && profile?.name ? profile.name : "Anonymous";
-      const uuid = selectedStory.uuid || Math.random().toString(36).substring(7);
+      const author = escapeXml(isLogin && profile?.name ? profile.name : "Anonymous");
+      const uuid = escapeXml(selectedStory.uuid || crypto.randomUUID());
 
-      zip.file("mimetype", "application/epub+zip");
+      zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
       zip.folder("META-INF")?.file("container.xml", 
         `<?xml version="1.0"?>
         <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -1455,7 +1468,7 @@ const [, setShowRemix] = useState<boolean>(false);
           <navMap><navPoint id="navpoint-1" playOrder="1"><navLabel><text>Start Reading</text></navLabel><content src="content.html"/></navPoint></navMap>
         </ncx>`);
 
-      const htmlBody = content.split('\n').filter(p => p.trim()).map(p => `<p>${p.trim()}</p>`).join('\n');
+      const htmlBody = content.split('\n').filter(p => p.trim()).map(p => `<p>${escapeXml(p.trim())}</p>`).join('\n');
       zip.folder("OEBPS")?.file("content.html", 
         `<?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
