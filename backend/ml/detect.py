@@ -12,6 +12,7 @@ Place at: story-spark-ai/ml/detect.py
 
 import os
 import json
+from pathlib import Path
 import numpy as np
 import joblib
 import random
@@ -113,8 +114,15 @@ def load_ml_assets_into_cache():
     model = load_model(str(MODEL_PATH))
     scaler = joblib.load(str(SCALER_PATH))
 
-    with open(THRESHOLD_PATH, "r") as f:
-        threshold = json.load(f)["threshold"]
+    with open(THRESHOLD_PATH, "r", encoding="utf-8") as f:
+        threshold_data = json.load(f)
+    
+    threshold = threshold_data.get("threshold")
+    
+    if threshold is None:
+        raise ValueError(
+            "threshold.json is missing required 'threshold' field"
+    )
 
     _ML_ASSETS_CACHE = {
         "model": model,
@@ -296,41 +304,50 @@ PROMPTS = {
 
 
 def _interactive():
-    print("\n" + "=" * 52)
-    print("  Writer's Block Detector — Interactive Mode")
-    print("=" * 52)
-    print(f"\nEnter data for {SEQ_LEN} timesteps (one per writing window).")
-    print("─" * 52)
+    while True:
+        print("\n" + "=" * 52)
+        print("  Writer's Block Detector — Interactive Mode")
+        print("=" * 52)
+        print(f"\nEnter data for {SEQ_LEN} timesteps (one per writing window).")
+        print("─" * 52)
 
-    session = []
-    for i in range(1, SEQ_LEN + 1):
-        print(f"\n  Timestep {i}/{SEQ_LEN}")
-        step = {key: _get_int(prompt) for key, prompt in PROMPTS.items()}
-        session.append(step)
+        session = []
 
-    print("\n" + "─" * 52)
-    print("  Result")
-    print("─" * 52)
+        for i in range(1, SEQ_LEN + 1):
+            print(f"\n  Timestep {i}/{SEQ_LEN}")
+            step = {
+                key: _get_int(prompt)
+                for key, prompt in PROMPTS.items()
+            }
+            session.append(step)
 
-    result = detect(session)
+        print("\n" + "─" * 52)
+        print("  Result")
+        print("─" * 52)
 
-    status = "🔴 STUCK" if result["is_stuck"] else "🟢 FLOWING"
-    print(f"\n  Status        : {status}")
-    print(f"  Confidence    : {result['confidence']}")
-    print(f"  Anomaly Score : {result['anomaly_score']}")
-    print(f"  Threshold     : {result['threshold']}")
+        result = detect(session)
 
-    if result["is_stuck"]:
-        print(f"\n  💡 Suggestion :")
-        print(f"     {result['suggestion']}")
-    else:
-        print("\n  ✅ User is in a normal creative flow — no intervention needed.")
+        status = "🔴 STUCK" if result["is_stuck"] else "🟢 FLOWING"
 
-    print()
+        print(f"\n  Status        : {status}")
+        print(f"  Confidence    : {result['confidence']}")
+        print(f"  Anomaly Score : {result['anomaly_score']}")
+        print(f"  Threshold     : {result['threshold']}")
 
-    again = input("  Run again? (y/n): ").strip().lower()
-    if again == "y":
-        _interactive()
+        if result["is_stuck"]:
+            print("\n  💡 Suggestion :")
+            print(f"     {result['suggestion']}")
+        else:
+            print(
+                "\n  ✅ User is in a normal creative flow — no intervention needed."
+            )
+
+        print()
+
+        again = input("  Run again? (y/n): ").strip().lower()
+
+        if again != "y":
+            break
 
 
 # ── Batch detect ──────────────────────────────────────────────────────────────
