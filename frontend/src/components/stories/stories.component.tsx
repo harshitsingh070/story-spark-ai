@@ -1216,16 +1216,20 @@ useEffect(() => {
                       )}
 
                       <span
-                        className={`text-xs tabular-nums ml-auto ${
-                          isOverLimit
-                            ? "text-red-400 font-medium"
-                            : isNearLimit
-                            ? "text-yellow-400"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {textareaValue.length} / {MAX_PROMPT_LENGTH}
-                      </span>
+  className={`text-xs tabular-nums ml-auto flex gap-2 ${
+    isOverLimit
+      ? "text-red-400 font-medium"
+      : isNearLimit
+      ? "text-yellow-400"
+      : "text-gray-500"
+  }`}
+>
+  <span>
+    {textareaValue.trim() === "" ? 0 : textareaValue.trim().split(/\s+/).length} words
+  </span>
+  <span className="opacity-40">·</span>
+  <span>{textareaValue.length} / {MAX_PROMPT_LENGTH} chars</span>
+</span>
                     </div>
                   </div>
 
