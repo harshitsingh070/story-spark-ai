@@ -4,12 +4,17 @@ import {
   HarmBlockThreshold,
 } from "@google/generative-ai";
 import { fetchImageURL } from "../../../utils/image_generation";
+import { generateStoryboardImage } from "../../../utils/storyboard_image_generation";
 import { GenerationAbortedError } from "../../../utils/generation_timeout";
 import config from "../../../config";
 import { v4 as uuidv4 } from "uuid";
-import { IAlternateEnding } from "./ai_model.interface";
+import { IAlternateEnding, ICharacter } from "./ai_model.interface";
 import ApiError from "../../../errors/api_error";
 import httpStatus from "http-status";
+import type {
+  IStoryVisualizerPayload,
+  IStoryVisualizerResult,
+} from "../story_visualizer/story_visualizer.interface";
 
 const geminiApiKey = config.gemini_api_key?.trim() ?? "";
 const genAI = new GoogleGenerativeAI(geminiApiKey);
@@ -122,6 +127,14 @@ const sanitizeJsonText = (rawText: string): string => {
     .trim();
 };
 
+const buildCharactersInstruction = (characters?: ICharacter[]): string => {
+  if (!characters || characters.length === 0) return "";
+  const charsString = characters
+    .map((c) => `- Name: ${c.name}, Role: ${c.role}, Personality/Traits: ${c.personality}`)
+    .join("\n");
+  return `Cast of Characters (You MUST incorporate these characters into all generated stories and maintain their roles, relationship dynamics, and traits consistently):\n${charsString}\n\n`;
+};
+
 export async function generateWithGeminiStories(
   prompt: string,
   wordLength: number = 250,
@@ -130,6 +143,7 @@ export async function generateWithGeminiStories(
   signal?: AbortSignal,
   tone?: string, // NEW: optional tone parameter
   genre?: string, // NEW: optional genre parameter
+  characters?: ICharacter[],
 ): Promise<Story[]> {
   throwIfAborted(signal);
 
@@ -145,9 +159,10 @@ export async function generateWithGeminiStories(
     // NEW: Prepend the tone instruction block to the Gemini prompt when a tone is selected.
     const toneInstruction = buildToneInstruction(tone);
     const genreInstruction = buildGenreInstruction(genre);
+    const charactersInstruction = buildCharactersInstruction(characters);
 
     const response = await chatSession.sendMessage(
-      `${genreInstruction}${toneInstruction}You are an expert storyteller and emotion analyst. The user provided the following base prompt: "${prompt}".
+      `${genreInstruction}${toneInstruction}${charactersInstruction}You are an expert storyteller and emotion analyst. The user provided the following base prompt: "${prompt}".
       First, enhance this prompt to be more emotionally engaging and context-sensitive (e.g., add suspense, joy, or mystery).
       Then, generate ${numStories} different short stories based on this ENHANCED prompt.
       The stories MUST be written entirely in the ${language} language.
@@ -179,6 +194,27 @@ export async function generateWithGeminiStories(
         return "";
       }
     });
+
+    // Fetch cover images for stories sequentially
+    const coverImages: string[] = [];
+    for (const story of stories) {
+      try {
+        const promptTitle = story?.title ? story.title : story?.tag ? story.tag : "Untitled";
+        const promptTag = story?.tag || "General";
+        const generated = await generateStoryboardImage(`Cover illustration for a book titled: ${promptTitle}. Theme: ${promptTag}. Style: cinematic, detailed`);
+        if (generated) {
+          coverImages.push(generated);
+          continue;
+        }
+        const imageResponse = await fetchImageURL(String(story?.title ?? story?.tag ?? ""));
+        coverImages.push(imageResponse?.imageUrl || "");
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        const logTitle = story?.title || story?.tag || "Unknown Story";
+        console.error(`[AI] Failed to generate cover image for "${logTitle}": ${errorMsg}`);
+        coverImages.push("");
+      }
+    }
     
     const imageUrls = await Promise.all(imagePromises);
 
@@ -186,6 +222,7 @@ export async function generateWithGeminiStories(
       ...story,
       language,
       imageURL: imageUrls[index],
+      coverImage: coverImages[index],
       uuid: uuidv4(),
     }));
   } catch (error: unknown) {
@@ -524,6 +561,110 @@ Preserve the story's tone, style and meaning. Only translate — do not modify t
   }
 }
 
+export async function generateStoryboardWithGemini(
+  payload: IStoryVisualizerPayload
+): Promise<IStoryVisualizerResult> {
+  assertGeminiApiKeyConfigured();
+
+  const { title, content, genre = "General", language = "English" } = payload;
+
+  const prompt = `You are a storyboard director for narrative visualization.
+
+Analyze the story below and extract 4 to 8 key visual scenes that represent the story's beginning, major turning points, climax, and ending.
+
+Title: ${title}
+Genre: ${genre}
+Language: ${language}
+Story:
+${content}
+
+Return only a valid JSON object with this exact structure:
+{
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "caption": "brief scene caption in ${language}",
+      "imagePrompt": "detailed visual prompt for a future image generator in ${language}"
+    }
+  ],
+  "styleGuide": "shared character, setting, mood, color palette, lighting, and visual style guide in ${language}"
+}
+
+Rules:
+- Include between 4 and 8 scenes.
+- Number scenes sequentially starting at 1.
+- Keep captions concise.
+- Image prompts must describe visible action, characters, setting, mood, camera framing, and important visual details.
+- The styleGuide must keep recurring characters, locations, wardrobe, atmosphere, and art direction consistent across future images.
+- Do not generate images or image URLs.`;
+
+  try {
+    const chatSession = model.startChat({
+      generationConfig: {
+        ...generationConfig,
+        maxOutputTokens: 4096,
+      },
+      safetySettings,
+      history: [],
+    });
+
+    const result = await chatSession.sendMessage(prompt);
+    const parsed = JSON.parse(sanitizeJsonText(result.response.text()));
+
+    const scenes = parsed?.scenes;
+
+    if (!Array.isArray(scenes) || scenes.length < 4 || scenes.length > 8) {
+      throw new ApiError(
+        httpStatus.BAD_GATEWAY,
+        "Invalid AI response: Expected 4 to 8 storyboard scenes."
+      );
+    }
+
+    const normalizedScenes = scenes.map((scene: any, index: number) => {
+      if (
+        !scene ||
+        typeof scene !== "object" ||
+        typeof scene.caption !== "string" ||
+        typeof scene.imagePrompt !== "string"
+      ) {
+        throw new ApiError(
+          httpStatus.BAD_GATEWAY,
+          "Invalid AI response: Storyboard scenes are malformed."
+        );
+      }
+
+      return {
+        sceneNumber: index + 1,
+        caption: scene.caption.trim(),
+        imagePrompt: scene.imagePrompt.trim(),
+      };
+    });
+
+    if (typeof parsed?.styleGuide !== "string" || !parsed.styleGuide.trim()) {
+      throw new ApiError(
+        httpStatus.BAD_GATEWAY,
+        "Invalid AI response: Style guide is missing."
+      );
+    }
+
+    return {
+      scenes: normalizedScenes,
+      styleGuide: parsed.styleGuide.trim(),
+    };
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    const errorMsg = error instanceof Error ? error.message : String(error);
+
+    throw new ApiError(
+      httpStatus.BAD_GATEWAY,
+      `AI storyboard generation failed: ${errorMsg}`
+    );
+  }
+}
+
 export async function chatWithGemini(
   message: string,
   history: { role: string; parts: { text: string }[] }[] = []
@@ -534,6 +675,7 @@ export async function chatWithGemini(
     const chatSession = model.startChat({
       generationConfig: {
         ...generationConfig,
+        maxOutputTokens: 4096,
         responseMimeType: "text/plain",
       },
       safetySettings,
@@ -541,12 +683,15 @@ export async function chatWithGemini(
     });
 
     const result = await chatSession.sendMessage(message);
+
     return result.response.text();
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : String(error);
+
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       `AI chat failed: ${errorMsg}`
     );
   }
 }
+
