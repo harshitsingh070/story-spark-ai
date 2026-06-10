@@ -911,6 +911,41 @@ ${content}
     }
   };
 
+  const handleExportTxt = () => {
+    if (!selectedStory) {
+      toast.error("No story available to export.");
+      return;
+    }
+
+    try {
+      const title = selectedStory.title || "Story";
+      const content = selectedStory.content || "";
+      const tag = selectedStory.tag || "General";
+      const authorName = isLogin && profile?.name ? profile.name : "Anonymous";
+      const isoDate = new Date().toISOString().split("T")[0];
+      const underline = "=".repeat(title.length);
+
+      const txtContent = `${title}\n${underline}\n\nGenre  : ${tag}\nAuthor : ${authorName}\nDate   : ${isoDate}\n\n${content}\n`;
+
+      const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      const fileName = title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "story";
+      link.setAttribute("download", `${fileName}.txt`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Plain text downloaded!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export plain text.");
+    }
+  };
+
   const handleExportDOCX = async () => {
     if (!selectedStory) {
       toast.error("No story available to export.");
@@ -1311,6 +1346,14 @@ ${content}
                   disabled={!selectedStory}
                 >
                   ⬇️ Markdown
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl px-3 py-2 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 border border-slate-200/60 dark:border-transparent text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-[0.98] cursor-pointer"
+                  onClick={handleExportTxt}
+                  disabled={!selectedStory}
+                >
+                  📃 TXT
                 </button>
                 <button
                   type="button"
@@ -1846,6 +1889,30 @@ ${content}
     }
   };
 
+  const handleExportTxt = () => {
+    if (!selectedStory) { toast.error("No story available to export."); return; }
+    if (!selectedStory.content?.trim()) { toast.error("Story content is empty. Cannot export."); return; }
+    setIsExportDropdownOpen(false);
+
+    try {
+      const title = selectedStory.title || "Story";
+      const content = selectedStory.content || "";
+      const tag = selectedStory.tag || "General";
+      const authorName = isLogin && profile?.name ? profile.name : "Anonymous";
+      const isoDate = new Date().toISOString().split("T")[0];
+      const underline = "=".repeat(title.length);
+
+      const txtContent = `${title}\n${underline}\n\nGenre  : ${tag}\nAuthor : ${authorName}\nDate   : ${isoDate}\n\n${content}\n`;
+
+      const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+      downloadBlob(blob, getSafeFileName(title, "txt"));
+      toast.success("Plain text downloaded!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export plain text.");
+    }
+  };
+
   const handleExportDOCX = () => {
     if (!selectedStory) { toast.error("No story available to export."); return; }
     if (!selectedStory.content?.trim()) { toast.error("Story content is empty. Cannot export."); return; }
@@ -2020,6 +2087,9 @@ ${content}
                       </button>
                       <button onClick={handleExportMarkdown} className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 cursor-pointer">
                         <span>⬇️</span> Markdown
+                      </button>
+                      <button onClick={handleExportTxt} className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 cursor-pointer">
+                        <span>📃</span> Plain Text
                       </button>
                       <button onClick={handleExportDOCX} className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 cursor-pointer">
                         <span>📝</span> DOCX
