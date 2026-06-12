@@ -519,6 +519,9 @@ const deletePost = async (postId: string, token: ITokenPayload) => {
   }
 
   await Bookmark.deleteMany({ storyId: postId });
+  // Delete all comments associated with the post to prevent orphaned
+  // comment documents accumulating in the database after post deletion.
+  await Comment.deleteMany({ postId });
 
   return post;
 };
