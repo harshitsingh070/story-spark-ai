@@ -1,45 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import PricingComponent from "../home/pricing/pricing.component";
 
-const plans = [
-  { title: "Free", price: "$0", duration: "/month", features: ["Basic AI assistance", "5 stories per month"], linkTo: "/signup", buttonLabel: "Get Started" },
-  { title: "Pro", price: "$19", duration: "/month", features: ["Unlimited stories", "Priority support"], linkTo: "/payment?plan=Pro&price=19", buttonLabel: "Start Pro Trial" },
-  { title: "Enterprise", price: "$49", duration: "/month", features: ["Team collaboration", "API access"], linkTo: "/contact-us", buttonLabel: "Contact Sales" },
-];
-
-const PricingComponent = () => {
-  const navigate = useNavigate();
+const PricingMainComponent = () => {
   return (
-    <section className="story-section" id="pricing-section">
-      <div className="story-page-shell">
-        <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
-          <h2 className="story-section-heading">Simple, Transparent Pricing</h2>
-        </div>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
-          {plans.map((plan) => (
-            <div key={plan.title} className="motion-card story-panel rounded-lg p-6">
-              <h3 className="mb-2 text-xl font-bold text-slate-100">{plan.title}</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-extrabold text-slate-50">{plan.price}</span>
-                <span className="text-slate-500">{plan.duration}</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate(plan.linkTo)}
-                className={`mt-10 w-full rounded-xl px-4 py-4 font-bold uppercase tracking-wide transition-all active:scale-[0.98] ${
-                  plan.highlight
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:from-blue-500 hover:to-indigo-500"
-                    :  "bg-blue-600 text-white shadow-lg hover:bg-blue-700"
-                }`}
-              >
-                {plan.buttonLabel}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+    <div>
+      <PricingComponent />
+    </div>
   );
 };
 
-export default PricingComponent;
+export default PricingMainComponent;
