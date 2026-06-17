@@ -148,6 +148,14 @@ export const setupCollabSocket = (io: Server) => {
           return;
         }
 
+        // Check if AI is currently generating
+        if (room.isAiGenerating) {
+          socket.emit("collab:error", {
+            message: "AI is currently generating. Please wait before adding text.",
+          });
+          return;
+        }
+
         const chunk: IStoryChunk = {
           authorId: userId,
           authorName: participant.username,
@@ -228,6 +236,14 @@ socket.on("collab:awareness", ({ roomId, awareness }) => {
           return;
         }
 
+        // Check if AI is already generating
+        if (room.isAiGenerating) {
+          socket.emit("collab:error", {
+            message: "AI is already generating. Please wait for it to finish.",
+          });
+          return;
+        }
+
         const user = await User.findById(userId);
         if (!user) {
           socket.emit("collab:error", { message: "User not found!" });
@@ -252,6 +268,11 @@ socket.on("collab:awareness", ({ roomId, awareness }) => {
 
         try {
           await runWithQuotaCleanup(guard, async () => {
+            // Set AI generating flag to true and remember current story length
+            room.isAiGenerating = true;
+            const initialStoryLength = room.story.length;
+            await room.save();
+
             collabNamespace.to(roomId).emit("collab:ai_thinking", { roomId });
 
             const storyContext = room.story
@@ -285,7 +306,10 @@ socket.on("collab:awareness", ({ roomId, awareness }) => {
 
             const latestRoom = await CollabRoom.findOne({ roomId });
             if (latestRoom) {
-              latestRoom.story.push(aiChunk);
+              // Insert the AI chunk right after the last chunk that existed when we started the AI call
+              // This ensures the AI's continuation is in the correct context position even if users added text in between
+              latestRoom.story.splice(initialStoryLength, 0, aiChunk);
+              latestRoom.isAiGenerating = false;
               await latestRoom.save();
 
               collabNamespace.to(roomId).emit("collab:story_updated", {
@@ -300,7 +324,15 @@ socket.on("collab:awareness", ({ roomId, awareness }) => {
             message: "AI continuation failed. Please try again.",
           });
         } finally {
+          // Make sure we unset the flag even if there's an error
+          const roomToUpdate = await CollabRoom.findOne({ roomId });
+          if (roomToUpdate && roomToUpdate.isAiGenerating) {
+            roomToUpdate.isAiGenerating = false;
+            await roomToUpdate.save();
+          }
+
           activeAiGenerations.delete(roomId);
+
           collabNamespace.to(roomId).emit("collab:user_stop_typing", {
             userId: "ai",
           });
