@@ -8,6 +8,7 @@ import { formatReadingStats } from "../../utils/story-utils";
 import toast, { Toaster } from "react-hot-toast";
 import { useCreatePostMutation, useDeletePostMutation } from "../../redux/apis/post.api";
 import { useGetProfileInfoQuery } from "../../redux/apis/user.api";
+import StoryAchievementDashboard from "./StoryAchievementDashboard";
 import jsPDF from "jspdf";
 import {
   fetchImageAsBlob,
@@ -1369,6 +1370,11 @@ const handleGenerateCharacterProfile = async () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start relative z-10 w-full box-border">
         
+        {/* Writing Achievement Dashboard */}
+<StoryAchievementDashboard
+  totalStories={stories.length}
+/>
+
         {/* ── Left Column ── */}
         <div className="col-span-1 lg:col-span-8 flex flex-col space-y-6 w-full box-border animate-fade-in-up">
           
@@ -1890,7 +1896,7 @@ const handleGenerateCharacterProfile = async () => {
           </div>
         </div>
 
-        
+
 
         {/* ── Right Column: Preview Panel ── */}
         <div className="col-span-1 lg:col-span-4 w-full box-border lg:sticky lg:top-6">
