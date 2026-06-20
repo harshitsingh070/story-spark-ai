@@ -333,33 +333,12 @@ export const useSpeechSynthesis = (
         setError("Unable to play narration. Please try again.");
       };
 
-      const loadedVoices = speechSynthesis.getVoices();
-      browserVoicesRef.current = loadedVoices;
-      setBrowserVoices(loadedVoices);
-      setIsReady(loadedVoices.length > 0);
-
       synthRef.current.cancel();
       synthRef.current.speak(utterance);
       setCurrentWordIndex(0);
     },
     [isSupported, rateState, pitchState, volumeState, resolveBrowserVoice, selectedVoiceId, stop],
   );
-
-  const setPitch = useCallback((nextPitch: number) => {
-    setPitchState(nextPitch);
-
-    if (utteranceRef.current) {
-      utteranceRef.current.pitch = nextPitch;
-    }
-  }, []);
-
-  const setVolume = useCallback((nextVolume: number) => {
-    setVolumeState(nextVolume);
-
-    if (utteranceRef.current) {
-      utteranceRef.current.volume = nextVolume;
-    }
-  }, []);
 
   const pause = useCallback(() => {
     if (synthRef.current && isSpeaking && !isPaused) {

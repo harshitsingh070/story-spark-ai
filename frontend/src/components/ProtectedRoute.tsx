@@ -1,6 +1,7 @@
-import { ReactNode } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { isLoggedIn, getUserInfo } from "../services/auth.service";
+
+import { ReactNode } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { isLoggedIn, getUserInfo } from '../services/auth.service';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];

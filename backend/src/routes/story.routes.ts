@@ -13,17 +13,17 @@ import sendResponse from "../shared/send_response";
 import httpStatus from "http-status";
 import { Request, Response } from "express";
 import piiScrubberMiddleware from "../app/middleware/pii_scrubber";
+import { generateStory } from "../services/ai.service";
 
 const router = express.Router();
 
 /** STORY CONTINUATION - single */
 router.post(
   "/continue",
-  // For authenticated users: apply per-user tier-aware limit (fixes #3023).
-  // For unauthenticated guests: fall back to the IP-based free limit.
-  // Both middlewares are intentionally stacked so unauthenticated requests
-  // still get the IP cap while authenticated users get the user-keyed one.
-  freeAiRateLimiter,
+  // Authenticated users get the per-user storyGenerationRateLimiter.
+  // Unauthenticated requests are rejected by auth middleware first,
+  // so freeAiRateLimiter only applies to edge cases where auth passes
+  // without a user object (e.g., API-key-based access).
   auth(
     ENUM_USER_ROLE.USER,
     ENUM_USER_ROLE.WRITER,
@@ -31,6 +31,7 @@ router.post(
     ENUM_USER_ROLE.SUPER_ADMIN
   ),
   storyGenerationRateLimiter,
+  freeAiRateLimiter,
   piiScrubberMiddleware,
   validateRequest(AIModelValidator.aiStoryContinuation),
   catchAsync(async (req: Request, res: Response) => {
@@ -57,7 +58,7 @@ router.post(
   validateRequest(AIModelValidator.aiStoryContinuation),
   catchAsync(async (req: Request, res: Response) => {
     const { prompt, language, count } = req.body as { prompt: string; language?: string; count?: number };
-    const result = await AiModelService.aiFreeStoryContinuationMultiple({ prompt, language, count });
+    const result = await AiModelService.aiFreeStoryContinuation({ prompt, language });
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -77,6 +78,25 @@ router.post(
   ),
   validateRequest(ReviewValidator.createReview),
   ReviewController.createReview
+);
+
+/** GENERATE STORY */
+router.post(
+  "/generate",
+  // Add auth/rate-limiter middlewares here if needed
+  catchAsync(async (req: Request, res: Response) => {
+    const { prompt, provider, options } = req.body;
+    
+    // Call our newly refactored service
+    const result = await generateStory(prompt, provider, options);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Story generated successfully in structured format!",
+      data: result, // This will return the formatted JSON
+    });
+  })
 );
 
 export default router;

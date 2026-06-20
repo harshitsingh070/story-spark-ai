@@ -12,18 +12,12 @@ import cookieParser from "cookie-parser";
 import config from "./config";
 import { Routers } from "./router";
 import globalErrorHandler from "./app/middleware/global.error.handler";
+import leaderboardRoute from "./routes/leaderboard.route";
+
 
 const app: Application = express();
 app.set("trust proxy", 1);
 app.use(helmet());
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests, please try again later.",
-});
-
-app.use(limiter);
 
 const defaultCorsOrigins =
   process.env.NODE_ENV === "development"
@@ -42,6 +36,9 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) {
+        if (process.env.NODE_ENV === "production") {
+          return callback(new Error("Origin header required"));
+        }
         return callback(null, true);
       }
 
@@ -53,9 +50,18 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Cookie"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
+
+// Rate limiter — placed after CORS so OPTIONS preflight requests are
+// never counted against the limit before CORS has a chance to respond.
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests, please try again later.",
+});
+app.use(limiter);
 
 // ─── 1. FIXED: ENFORCED HARDENED PAYLOAD LIMITS TO PREVENT DoS ───
 app.use(express.json({ limit: "2mb" }));
@@ -72,6 +78,7 @@ app.use((req, res, next) => {
 
 // Primary API Router Matrix Engagement
 app.use("/api/v1", Routers);
+app.use("/api/v1/leaderboard", leaderboardRoute);
 
 // ─── 2. FIXED: REFUSED TO SHORT-CIRCUIT, DELEGATING 404 TO NEXT() ───
 app.use((req: Request, res: Response, next: NextFunction) => {
