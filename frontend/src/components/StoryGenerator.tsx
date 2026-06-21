@@ -12,6 +12,9 @@ export const StoryGenerator: React.FC<StoryGeneratorProps> = ({ onStoryGenerated
   const [isLoading, setIsLoading] = useState(false);
   const [stories, setStories] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const MAX_CHARS = 500;
+
 
   const handleGenerate = async () => {
     // Don't generate if no prompt
@@ -90,16 +93,32 @@ export const StoryGenerator: React.FC<StoryGeneratorProps> = ({ onStoryGenerated
         <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-1">
           Story Prompt
         </label>
-        <textarea
+<textarea
           id="prompt"
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={(e) => {
+            if (e.target.value.length <= MAX_CHARS) {
+              setPrompt(e.target.value);
+            }
+          }}
           placeholder="Enter your story prompt..."
           disabled={isLoading}
           rows={4}
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50"
         />
-      </div>
+        <div className="flex justify-end mt-1">
+          <span
+            className={`text-xs ${
+              prompt.length >= MAX_CHARS
+                ? "text-red-500"
+                : prompt.length >= MAX_CHARS * 0.8
+                ? "text-orange-400"
+                : "text-gray-400"
+            }`}
+          >
+            {prompt.length} / {MAX_CHARS}
+          </span>
+        </div>
 
       {/* Variation Count */}
       <div className="mb-4">
