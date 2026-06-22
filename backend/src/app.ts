@@ -26,10 +26,16 @@ const defaultCorsOrigins =
         "https://www.storysparkai.vercel.app",
       ];
 
-const corsOrigins =
+// Get raw origins from configuration or defaults
+const rawCorsOrigins =
   config.cors_origins && config.cors_origins.length > 0
     ? config.cors_origins
     : defaultCorsOrigins;
+
+// Dynamically strip trailing slashes and clean up whitespaces from origins
+const corsOrigins = rawCorsOrigins.map((origin) =>
+  origin.trim().replace(/\/$/, "")
+);
 
 app.use(
   cors({
@@ -86,7 +92,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     },
   ];
 
-  // Passing the error downward to the centralized engine
   next(error);
 });
 
