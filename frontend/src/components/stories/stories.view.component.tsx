@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import CharacterProfileCard from "./CharacterProfileCard";
 import StoryGenreTransformation from "./StoryGenreTransformation";
+import StoryWorldMap from "./StoryWorldMap";
 import { CharacterProfile } from "./stories.utils";
 import { getShortenedText, ITopicData, topicsData } from "./stories.utils";
 import toast, { Toaster } from "react-hot-toast";
@@ -41,6 +42,23 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [profileLoading, setProfileLoading] = useState<boolean>(false);
   const [createPost] = useCreatePostMutation();
   const [showGenreTransformation, setShowGenreTransformation] = useState<boolean>(false);
+
+  const [showWorldMap, setShowWorldMap] = useState<boolean>(false);
+
+const [storyLocations] = useState([
+  {
+    name: "Mystic Forest",
+    description: "A magical forest filled with ancient secrets and creatures.",
+  },
+  {
+    name: "Crystal Kingdom",
+    description: "The kingdom where the main journey begins.",
+  },
+  {
+    name: "Shadow Mountain",
+    description: "A dangerous place holding the final challenge.",
+  },
+]);
 
   useEffect(() => {
     setSelectTopics(topics.filter((topic) => topic.selected));
@@ -289,6 +307,13 @@ const handleGenerateCharacterProfile = async () => {
                     >
                       🎭 Transform Genre
                     </button>
+                    <button
+  type="button"
+  className="rounded-lg px-4 py-2 bg-green-700 text-white font-semibold hover:bg-green-600 transition-colors"
+  onClick={() => setShowWorldMap(true)}
+>
+  🗺️ World Map
+</button>
                   </>
                 )}
                 <button
@@ -412,6 +437,12 @@ const handleGenerateCharacterProfile = async () => {
           onClose={() => setShowGenreTransformation(false)}
         />
       )}
+      {showWorldMap && (
+  <StoryWorldMap
+    locations={storyLocations}
+    onClose={() => setShowWorldMap(false)}
+  />
+)}
       <Toaster position="top-right" reverseOrder={false} />
     </div>
   );
